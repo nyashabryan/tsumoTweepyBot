@@ -1,19 +1,19 @@
-import bot.py
+import bot
 
 def test_get():
 
     #Test 1:
-    print (get_access_token())
+    print (bot.get_access_token_secret())
 
     #Test 2:
-    print (get_access_token_key())
+    print (bot.get_access_token_key())
 
     #Test 3:
-    print (get_consumer_key())
+    print (bot.get_consumer_key())
 
     #Test 4: 
-    print (get_consumer_secret())
+    print (bot.get_consumer_secret())
 
 
-if __name__ = "__main__":
+if __name__ == "__main__":
     test_get()
