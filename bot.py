@@ -6,20 +6,27 @@
 
 import tweepy
 import db
+import random
+import sys
 
 keys = db.get_keys()	
 
-def main():
-     
-    auth = tweepy.OAuthHandler(keys[consumer_key], keys[consumer_secret])
+def post_tsumo():
+    
+    auth = tweepy.OAuthHandler(keys["consumer_key"], keys["consumer_secret"])
 
-    auth.set_access_token(keys[access_token_key], keys[access_token_secret])
+    auth.set_access_token(keys["access_token"], keys["access_token_secret"])
     
     api =  tweepy.API(auth)
     
-    api.update_status(db.get_tsumo())
-    
+    x =  random.randint(1, db.get_tsumo_count())
+    api.update_status(db.get_tsumo(x))
 
+    print ("Tsumo number ", x, " has been posted successfully")
 
 if __name__ == "__main__":
-    main()
+    args = (sys.argv)
+    
+    if args[1] == "post":
+        post_tsumo()
+

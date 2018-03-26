@@ -1,4 +1,5 @@
 import sqlite3
+import sys
 
 db_name = "info.db"
 init_src = "tsumo.txt"
@@ -23,7 +24,7 @@ def create_tables():
                 (ID integer primary key, tsumo text, meaning text)''')
 
     for line in tsumo_lines:
-        c.executemany('''INSERT INTO Tsumo(tsumo) values (?)''',line[:-1])
+        c.execute('''INSERT INTO Tsumo(tsumo) values (?)''',(line[:-1],))
 
     #Create the keys table and populate it with Keys
     
@@ -31,7 +32,10 @@ def create_tables():
                 (key text, value text)''')
 
     for line in keys_lines:
+        if len(line) == 0:
+            continue
         c.execute('''INSERT INTO Keys (key, value) values (?, ?)''', (line.split(": ")[0], line.split(": ")[1][:-1]))
+        
     
     conn.commit()
     conn.close()
@@ -41,10 +45,17 @@ def get_tsumo(x):
     conn = sqlite3.connect(db_name)
     c = conn.cursor()
 
-    c.execute('''SELECT tsumo FROM Tsumo WHERE ID = ?''', x)
+    c.execute('''SELECT tsumo FROM Tsumo WHERE ID = ?''', (x,))
     result = c.fetchone()
     conn.close()
     return str(result[0])
+
+def get_tsumo_count():
+    conn = sqlite3.connect(db_name)
+    c = conn.cursor()
+    c.execute('''SELECT count(*) FROM Tsumo''')
+    result = c.fetchone()
+    return int(result[0])
 
 def new_tsumo():
     new_lines = []
@@ -74,6 +85,8 @@ def new_tsumo():
     else:
         print(y-x, " rows were added.")
 
+    with open(new_tsumo, "w") as f:
+        f.write("")
 
 def get_keys():
     
@@ -84,7 +97,7 @@ def get_keys():
     c.execute('''SELECT key, value  FROM Keys''')
     results = c.fetchall()
     for result in results: 
-        keys[result[0]] =  results[1]
+        keys[result[0]] =  result[1]
 
     conn.commit()
     conn.close()
@@ -92,4 +105,30 @@ def get_keys():
     return keys
 
 
-create_tables()
+def delete_table():
+    conn = sqlite3.connect(db_name)
+    c = conn.cursor()
+
+    c.execute('''DROP TABLE Tsumo''')
+    conn.commit()
+    conn.close()
+
+# Running db methods
+
+if __name__ == "__main__":
+    args =  str(sys.argv)[1:]
+    
+    if args[0] == "create_tables":
+        create_tables()
+
+    elif args[1] ==  "new_tsumo":
+        new_tsumo()
+
+    elif args[1] == "delete_table":
+        delete_table()
+    else:
+        pass
+
+
+
+
