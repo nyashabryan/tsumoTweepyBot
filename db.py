@@ -1,10 +1,15 @@
 import sqlite3
 import sys
+import os.path 
 
 db_name = "info.db"
 init_src = "tsumo.txt"
-new_tsumo = "new_tsumo.txt"
+new_tsumo_file = "new_tsumo.txt"
 keys_src = "keys"
+all_tsumo = "all_tsumo.txt"
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+db_path = os.path.join(BASE_DIR, db_name)
 
 def create_tables():
     tsumo_lines = []
@@ -16,7 +21,7 @@ def create_tables():
         keys_lines =  f.readlines()
 
 
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     #Create the Tsumo table and poulate it with Tsumos
 
@@ -42,7 +47,7 @@ def create_tables():
 
 def get_tsumo(x):
 
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
     c.execute('''SELECT tsumo FROM Tsumo WHERE ID = ?''', (x,))
@@ -51,47 +56,75 @@ def get_tsumo(x):
     return str(result[0])
 
 def get_tsumo_count():
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     c.execute('''SELECT count(*) FROM Tsumo''')
     result = c.fetchone()
     return int(result[0])
 
+def print_all_tsumo():
+    
+    conn =  sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    tsumo = []
+    c.execute("""SELECT * FROM Tsumo""")
+    
+    with open(all_tsumo, "w") as f:
+        for result in c.fetchall():
+            f.write(result[1] + "\n")
+
+    conn.close()
+
+
 def new_tsumo():
+
+    print_all_tsumo()
+
     new_lines = []
     new_tsumo = []
-    with open(new_tsumo, "r") as f: 
+    with open(new_tsumo_file, "r") as f: 
         new_lines = f.readlines()
 
     for line in new_lines:
-        new_tsumo.append(new_lines[:-1])
-
-    conn = sqlite3.connect(db_name)
+        if len(line) < 2:
+            continue
+        if line.find("|") == -1:
+            new_tsumo.append([line[:-1], ""])
+        else:
+            new_tsumo.append(line[:-1].split("|"))
+    
+    print (new_tsumo)
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     
     x = c.rowcount
+    print(x)
     for tsumo in new_tsumo:
-        c.execute('''INSERT INTO Tsumo(tsumo) 
-                SELECT ? 
-                FROM dual
+        c.execute('''INSERT INTO Tsumo(tsumo, meaning)
+                SELECT ?, ?
                 WHERE NOT EXISTS( SELECT 1
-                FROM FUNDS
-                WHERE tsumo ==  ?)''', tsumo)
+                FROM Tsumo
+                WHERE tsumo ==  ?)''', (tsumo[0], tsumo[1], tsumo[0]))
+
+    conn.commit()
+    conn.close()
     y = c.rowcount
+    print(y)
 
     if x ==y:
         print ("No new rows were added.")
 
     else:
         print(y-x, " rows were added.")
-
+    
     with open(new_tsumo, "w") as f:
         f.write("")
 
 def get_keys():
     
     keys = {}
-    conn = sqlite3.connect(db_name)
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
     
     c.execute('''SELECT key, value  FROM Keys''')
@@ -106,28 +139,54 @@ def get_keys():
 
 
 def delete_table():
-    conn = sqlite3.connect(db_name)
+    print_all_tsumo()
+    conn = sqlite3.connect(db_path)
     c = conn.cursor()
 
     c.execute('''DROP TABLE Tsumo''')
     conn.commit()
     conn.close()
 
+def clean_tsumo():
+    print_all_tsumo()
+    conn = sqlite3.connect(db_path)
+    c = conn.cursor()
+
+    c.execute(''' DELETE FROM Tsumo
+                WHERE tsumo = ""''')
+
+    conn.commit()
+    conn.close()
+
+
 # Running db methods
 
 if __name__ == "__main__":
-    args =  str(sys.argv)[1:]
-    
-    if args[0] == "create_tables":
+        
+    if len(sys.argv) < 2:
+        print("No option selected. Exitting.")
+
+    elif sys.argv[1] == "create_tables":
         create_tables()
 
-    elif args[1] ==  "new_tsumo":
+    elif sys.argv[1] ==  "new_tsumo":
+        print("Adding new tsumo to the database.")
         new_tsumo()
 
-    elif args[1] == "delete_table":
+    elif sys.argv[1] == "delete_table":
+        print ("Dropping Tsumo database")
         delete_table()
+
+    elif sys.argv[1] ==  "back_up":
+        print("Back up selected. Backing up data...")
+        print_all_tsumo()
+    
+    elif sys.argv[1] == "clean_tsumo":
+        print("Cleaning blank tsumo from DB...")
+        clean_tsumo()
+
     else:
-        pass
+        print("Unavailable option.")
 
 
 
