@@ -4,7 +4,7 @@ Shona Tsumo(Proverb) Twitbot
 A simple twitbot to post Shona proverbs using the Standard Twitter API and Tweepy. 
 ## Built With
 
-This project was built using the Twitter Standard App API and Tweepy for Python. 
+This project was built using the Twitter Standard App API and Tweepy for Python. The database used in the program in Sqlite3. 
  
 ## License
 
